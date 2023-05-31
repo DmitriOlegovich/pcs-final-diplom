@@ -1,46 +1,49 @@
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.itextpdf.io.IOException;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
 
 public class Main {
-    public static final String DIRECTORY_WITH_PDF = "pdfs";
-    public static final int PORT = 8989;
-    public static final String HOST = "127.0.0.1";
+    static int port = 8989;
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
 
-        BooleanSearchEngine engine = new BooleanSearchEngine(new File(DIRECTORY_WITH_PDF));
+        try {
+            BooleanSearchEngine engine = new BooleanSearchEngine();
+            List<PageEntry> resultList = engine.search("Бизнес");
 
-        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+            System.out.println("Результат по слову \"Бизнес\"");
+            for (PageEntry pageEntry : resultList) {
+                System.out.println(pageEntry.toString());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
+
+            BooleanSearchEngine engine = new BooleanSearchEngine();
             Gson gson = new GsonBuilder().create();
 
-            System.out.println("Сервер запустился");
-
             while (true) {
-                try (Socket socket = serverSocket.accept();
-                     BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                     PrintWriter writer = new PrintWriter(socket.getOutputStream())
-                ) {
-                    List<PageEntry> searchResult = engine.search(reader.readLine());
+                try (Socket clientSocket = serverSocket.accept();
+                     PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+                     BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
 
-                    StringBuilder jsonAnswer = new StringBuilder();
+                    String word = in.readLine();
+                    List<PageEntry> page = engine.search(word);
 
-                    searchResult.forEach(page -> jsonAnswer.append(gson.toJson(page)));
+                    if (page == null) {
+                        out.println("Совпадения отсутствуют");
+                    }
 
-                    writer.println(jsonAnswer);
+                    var json = gson.toJson(page);
+                    out.println(json);
                 }
             }
         } catch (IOException e) {
-            System.out.println("Не получается запустить сервер");
             e.printStackTrace();
         }
     }
