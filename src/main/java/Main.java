@@ -11,7 +11,7 @@ public class Main {
     public static void main(String[] args) {
 
         try {
-            BooleanSearchEngine engine = new BooleanSearchEngine();
+            BooleanSearchEngine engine = new BooleanSearchEngine(new File("pdfs"));
             List<PageEntry> resultList = engine.search("Бизнес");
 
             System.out.println("Результат по слову \"Бизнес\"");
@@ -24,7 +24,7 @@ public class Main {
 
         try (ServerSocket serverSocket = new ServerSocket(port)) {
 
-            BooleanSearchEngine engine = new BooleanSearchEngine();
+            BooleanSearchEngine engine = new BooleanSearchEngine(new File("pdfs"));
             Gson gson = new GsonBuilder().create();
 
             while (true) {
